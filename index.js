@@ -1,5 +1,6 @@
 const { Client } = require("@notionhq/client");
-const moment = require("moment");
+const moment = require("moment-timezone");
+moment.tz.setDefault("Asia/Hong_Kong");
 const ChartJSImage = require("chart.js-image");
 const log = require("loglevel");
 const fs = require("fs");
