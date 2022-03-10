@@ -353,12 +353,22 @@ const generateChart = (data, idealBurndown, labels, sprint, start, end) => {
             backgroundColor: "rgba(54,+162,+235,+.5)",
             data: idealBurndown,
           },
+          {
+            label: "Latest",
+            borderColor: "#ef4444",
+            backgroundColor: "rgba(255,+99,+132,+.5)",
+            data: data.slice(data.length - 1),
+          },
         ],
       },
       options: {
         title: {
           display: true,
-          text: `Sprint Burndown (${start.format("MMM D")} - ${end.format("MMM D")}`,
+          text: `Burndown - ${data.slice(data.length - 1)[0]} pts remaining`,
+        },
+        subtitle: {
+          display: true,
+          text: `Sprint ${start.format("MMM D")} - ${end.format("MMM D")}`,
         },
         legend: { display: false },
         scales: {
