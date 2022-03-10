@@ -187,22 +187,8 @@ const getPointsLeftByDay = async (
   });
   const pointsLeftByDay = [];
   response.results.forEach((result) => {
-    console.log('results: ', result)
     const { properties } = result;
-    console.log('properties: ', properties)
-    console.log('properties.Date: ', properties.Date)
-    console.log('properties.Points: ', properties.Points)
     const { Date: date, Points: points } = properties;
-    console.log('Date: ', date)
-    try {
-      console.log('Trying to print Date.date')
-      console.log(date.date)
-      console.log(date.date.start)
-    } catch (e) {
-      console.log('Failed to print Date.date')
-      console.error(e)
-    }
-    console.log('Points: ', date)
     const day = moment(date.date.start).diff(start, "days");
     if (pointsLeftByDay[day]) {
       log.warn(
@@ -348,7 +334,7 @@ const getChartDatasets = async (
   return { labels, pointsLeftByDay, idealBurndown };
 };
 
-const generateChart = (data, idealBurndown, labels) => {
+const generateChart = (data, idealBurndown, labels, sprint, start, end) => {
   const chart = ChartJSImage()
     .chart({
       type: "line",
@@ -372,7 +358,7 @@ const generateChart = (data, idealBurndown, labels) => {
       options: {
         title: {
           display: true,
-          text: "Sprint Burndown",
+          text: `Sprint Burndown (${start.format("MMM D")} - ${end.format("MMM D")}`,
         },
         legend: { display: false },
         scales: {
@@ -472,7 +458,7 @@ const run = async () => {
     }
   );
   log.info(JSON.stringify({ labels, data, idealBurndown }));
-  const chart = generateChart(data, idealBurndown, labels);
+  const chart = generateChart(data, idealBurndown, labels, sprint, start, end);
 
   await writeChartToFile(chart, "./out", `sprint${sprint}-latest`);
   await writeChartToFile(chart, "./out", `latest`);
