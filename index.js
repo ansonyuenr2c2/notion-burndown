@@ -353,12 +353,6 @@ const generateChart = (data, idealBurndown, labels, sprint, start, end) => {
             backgroundColor: "rgba(54,+162,+235,+.5)",
             data: idealBurndown,
           },
-          {
-            label: "Latest",
-            borderColor: "#ef4444",
-            backgroundColor: "rgba(255,+99,+132,+.5)",
-            data: data.slice(data.length - 1),
-          },
         ],
       },
       options: {
