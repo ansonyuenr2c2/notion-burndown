@@ -50,6 +50,41 @@ const parseConfig = () => {
   };
 };
 
+const dateObjToMoment = (notionDateObj, getEnd = false) =>
+  moment(notionDateObj.date[getEnd ? "end" : "start"]);
+
+const sprintObjToPlain = ({ properties: { Sprint, Start, End } }) => ({
+  sprint: Sprint.number,
+  start: dateObjToMoment(Start),
+  end: dateObjToMoment(End),
+});
+
+const getCurrentSprintSummary = async (
+  notion,
+  sprintSummaryDb,
+  { sprintProp }
+) => {
+  const response = await notion.databases.query({
+    database_id: sprintSummaryDb,
+    sorts: [
+      {
+        property: sprintProp,
+        direction: "descending",
+      },
+    ],
+  });
+  const now = moment().toISOString();
+  const currentSprint = response.results.find((sprintObj) => {
+    const { start, end } = sprintObjToPlain(sprintObj);
+    return now >= start.toISOString() && now < end.toISOString();
+  });
+
+  if (!currentSprint) {
+    throw new Error("There is no sprint currently!");
+  }
+  return sprintObjToPlain(currentSprint);
+};
+
 const getLatestSprintSummary = async (
   notion,
   sprintSummaryDb,
@@ -89,9 +124,8 @@ const countPointsLeftInSprint = async (
     },
   });
   const sprintStories = response.results;
-  const ongoingStories = sprintStories.filter(
-    (item) =>
-      new RegExp(statusInclude).test(item.properties.Status.select.name)
+  const ongoingStories = sprintStories.filter((item) =>
+    new RegExp(statusInclude).test(item.properties.Status.select.name)
   );
   return ongoingStories.reduce((accum, item) => {
     if (item.properties[estimateProp]) {
@@ -406,13 +440,13 @@ const writeChartToFile = async (chart, dir, filenamePrefix) => {
 const run = async () => {
   const { notion, chartOptions } = parseConfig();
 
-  const { sprint, start, end } = await getLatestSprintSummary(
+  const { sprint, start, end } = await getCurrentSprintSummary(
     notion.client,
     notion.databases.sprintSummary,
     { sprintProp: notion.options.sprintProp }
   );
   log.info(
-    JSON.stringify({ message: "Found latest sprint", sprint, start, end })
+    JSON.stringify({ message: "Found current sprint", sprint, start, end })
   );
 
   const pointsLeftInSprint = await countPointsLeftInSprint(
@@ -432,6 +466,7 @@ const run = async () => {
       pointsLeftInSprint,
     })
   );
+  return;
 
   await updateDailySummaryTable(
     notion.client,
