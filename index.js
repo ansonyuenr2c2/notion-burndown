@@ -22,7 +22,7 @@ const parseConfig = () => {
         options: {
           sprintProp: process.env.NOTION_PROPERTY_SPRINT,
           estimateProp: process.env.NOTION_PROPERTY_ESTIMATE,
-          statusInclude: process.env.NOTION_PROPERTY_PATTERN_STATUS_INCLUDE,
+          ongoingStatusRegex: process.env.NOTION_PROPERTY_PATTERN_ONGOING_STATUS_INCLUDE,
         },
       },
       chartOptions: {
@@ -41,7 +41,8 @@ const parseConfig = () => {
       options: {
         sprintProp: core.getInput("NOTION_PROPERTY_SPRINT"),
         estimateProp: core.getInput("NOTION_PROPERTY_ESTIMATE"),
-        statusInclude: core.getInput("NOTION_PROPERTY_PATTERN_STATUS_INCLUDE"),
+        ongoingStatusRegex: core.getInput("NOTION_PROPERTY_PATTERN_ONGOING_STATUS_INCLUDE"),
+        statusRegex: core.getInput("NOTION_PROPERTY_PATTERN_STATUS_INCLUDE"),
       },
     },
     chartOptions: {
@@ -77,7 +78,7 @@ const countPointsLeftInSprint = async (
   notion,
   backlogDb,
   sprint,
-  { sprintProp, estimateProp, statusInclude }
+  { sprintProp, estimateProp, ongoingStatusRegex, statusRegex }
 ) => {
   const response = await notion.databases.query({
     database_id: backlogDb,
@@ -88,10 +89,10 @@ const countPointsLeftInSprint = async (
       },
     },
   });
-  const sprintStories = response.results;
+  const sprintStories = response.results.filter((item) => item.properties.Status && new RegExp(statusRegex).test(item.properties.Status.select.name));
   const ongoingStories = sprintStories.filter(
     (item) =>
-      new RegExp(statusInclude).test(item.properties.Status.select.name)
+      new RegExp(ongoingStatusRegex).test(item.properties.Status.select.name)
   );
   return ongoingStories.reduce((accum, item) => {
     if (item.properties[estimateProp]) {
@@ -422,7 +423,7 @@ const run = async () => {
     {
       sprintProp: notion.options.sprintProp,
       estimateProp: notion.options.estimateProp,
-      statusInclude: notion.options.statusInclude,
+      ongoingStatusRegex: notion.options.ongoingStatusRegex,
     }
   );
   log.info(
